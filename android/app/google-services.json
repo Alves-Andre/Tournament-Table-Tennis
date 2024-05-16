@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "507486938861",
+    "project_id": "tornamenttt",
+    "storage_bucket": "tornamenttt.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:507486938861:android:1ebd78d6733c86d3540ee4",
+        "android_client_info": {
+          "package_name": "com.example.tornamenttabletennis"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAoiVhmXnRiF3BJ1bSoFL8MtWnhNKodK1Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
