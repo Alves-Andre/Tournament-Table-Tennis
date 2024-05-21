@@ -1,48 +1,34 @@
 import 'package:flutter/material.dart';
-import 'package:tornamenttabletennis/controller/classes.dart';
-import 'package:tornamenttabletennis/pages/atletas/atleta.dart';
-import 'package:tornamenttabletennis/services/atletaService.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../controller/classes.dart';
 
 class AtletaEditScreen extends StatefulWidget {
   final Atleta? atleta;
+  final String? atletaId;
+  final Function(String)? onSaved;
 
-  AtletaEditScreen({Key? key, this.atleta}) : super(key: key);
+  AtletaEditScreen({this.atleta, this.atletaId, this.onSaved});
 
   @override
   _AtletaEditScreenState createState() => _AtletaEditScreenState();
 }
 
 class _AtletaEditScreenState extends State<AtletaEditScreen> {
-  late TextEditingController _nomeController;
-  late TextEditingController _universidadeController;
-  late TextEditingController _raqueteController;
-  late TextEditingController _borrachaForehandController;
-  late TextEditingController _borrachaBackhandController;
-  
-  AtletaService atletaService = AtletaService();
+  final _formKey = GlobalKey<FormState>();
+  late String _nome;
+  late String _universidade;
+  late String _raquete;
+  late String _borrachaForehand;
+  late String _borrachaBackhand;
 
   @override
   void initState() {
     super.initState();
-    _nomeController = TextEditingController(text: widget.atleta?.nome ?? '');
-    _universidadeController =
-        TextEditingController(text: widget.atleta?.universidade ?? '');
-    _raqueteController =
-        TextEditingController(text: widget.atleta?.raquete ?? '');
-    _borrachaForehandController =
-        TextEditingController(text: widget.atleta?.borrachaForehand ?? '');
-    _borrachaBackhandController =
-        TextEditingController(text: widget.atleta?.borrachaBackhand ?? '');
-  }
-
-  @override
-  void dispose() {
-    _nomeController.dispose();
-    _universidadeController.dispose();
-    _raqueteController.dispose();
-    _borrachaForehandController.dispose();
-    _borrachaBackhandController.dispose();
-    super.dispose();
+    _nome = widget.atleta?.nome ?? '';
+    _universidade = widget.atleta?.universidade ?? '';
+    _raquete = widget.atleta?.raquete ?? '';
+    _borrachaForehand = widget.atleta?.borrachaForehand ?? '';
+    _borrachaBackhand = widget.atleta?.borrachaBackhand ?? '';
   }
 
   @override
@@ -53,44 +39,117 @@ class _AtletaEditScreenState extends State<AtletaEditScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: ListView(
-          children: [
-            TextField(
-              controller: _nomeController,
-              decoration: InputDecoration(labelText: 'Nome'),
-            ),
-            TextField(
-              controller: _universidadeController,
-              decoration: InputDecoration(labelText: 'Universidade'),
-            ),
-            TextField(
-              controller: _raqueteController,
-              decoration: InputDecoration(labelText: 'Raquete'),
-            ),
-            TextField(
-              controller: _borrachaForehandController,
-              decoration: InputDecoration(labelText: 'Borracha Forehand'),
-            ),
-            TextField(
-              controller: _borrachaBackhandController,
-              decoration: InputDecoration(labelText: 'Borracha Backhand'),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () async {
-                await atletaService.adicionarAtleta(
-                  nome: _nomeController.text,
-                  universidade: _universidadeController.text,
-                  raquete: _raqueteController.text,
-                  borrachaForhand: _borrachaForehandController.text,
-                  borrachaBackhand: _borrachaBackhandController.text,
-                );
-              },
-              child: Text('Salvar'),
-            ),
-          ],
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              TextFormField(
+                initialValue: _nome,
+                decoration: InputDecoration(labelText: 'Nome'),
+                onSaved: (value) => _nome = value!,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor, insira o nome';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                initialValue: _universidade,
+                decoration: InputDecoration(labelText: 'Universidade'),
+                onSaved: (value) => _universidade = value!,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor, insira a universidade';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                initialValue: _raquete,
+                decoration: InputDecoration(labelText: 'Raquete'),
+                onSaved: (value) => _raquete = value!,
+              ),
+              TextFormField(
+                initialValue: _borrachaForehand,
+                decoration: InputDecoration(labelText: 'Borracha Forehand'),
+                onSaved: (value) => _borrachaForehand = value!,
+              ),
+              TextFormField(
+                initialValue: _borrachaBackhand,
+                decoration: InputDecoration(labelText: 'Borracha Backhand'),
+                onSaved: (value) => _borrachaBackhand = value!,
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _salvarAtleta,
+                child: Text('Salvar'),
+              ),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  Future<void> _salvarAtleta() async {
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
+
+      final atleta = Atleta(
+        nome: _nome,
+        universidade: _universidade,
+        raquete: _raquete,
+        borrachaForehand: _borrachaForehand,
+        borrachaBackhand: _borrachaBackhand,
+      );
+
+      if (widget.atletaId == null) {
+        // Adicionar novo atleta
+        await FirebaseFirestore.instance.collection('atletas').add({
+          'nome': atleta.nome,
+          'universidade': atleta.universidade,
+          'raquete': atleta.raquete,
+          'borrachaForehand': atleta.borrachaForehand,
+          'borrachaBackhand': atleta.borrachaBackhand,
+        });
+        widget.onSaved?.call('Atleta adicionado com sucesso');
+      } else {
+        // Atualizar atleta existente
+        await FirebaseFirestore.instance
+            .collection('atletas')
+            .doc(widget.atletaId)
+            .update({
+          'nome': atleta.nome,
+          'universidade': atleta.universidade,
+          'raquete': atleta.raquete,
+          'borrachaForehand': atleta.borrachaForehand,
+          'borrachaBackhand': atleta.borrachaBackhand,
+        });
+        widget.onSaved?.call('Atleta atualizado com sucesso');
+      }
+
+      // Exibir pop-up e navegar de volta para a lista de atletas
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Sucesso'),
+            content: Text(widget.atletaId == null
+                ? 'Atleta adicionado com sucesso'
+                : 'Atleta atualizado com sucesso'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Fechar o diálogo
+                  Navigator.of(context).pop(); // Voltar para a tela anterior
+                },
+                child: Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+    }
   }
 }

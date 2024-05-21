@@ -12,7 +12,6 @@ class AtletaService {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
         return Atleta(
           nome: data['nome'],
-          dataNascimento: data['dataNascimento'],
           universidade: data['universidade'],
           raquete: data['raquete'],
           borrachaForehand: data['borrachaForhand'],
